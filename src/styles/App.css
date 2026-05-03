@@ -163,11 +163,12 @@ label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 
 }
 .heatmap {
   display: grid;
-  grid-auto-rows: 90px;
+  grid-auto-rows: 18px;
   gap: 3px;
 }
 .heatmap .cell {
-  height: 90px;
+  width: 18px;
+  height: 18px;
   border-radius: 3px;
   background: var(--heatmap-0);
   outline: 1px solid rgba(255, 255, 255, 0.04);
@@ -177,7 +178,7 @@ label { display: block; font-size: 13px; color: var(--text-dim); margin-bottom: 
 }
 .heatmap .cell:hover {
   outline-color: rgba(255, 255, 255, 0.45);
-  transform: scaleY(1.02);
+  transform: scale(1.15);
 }
 .heatmap .cell.l1 { background: var(--heatmap-1); }
 .heatmap .cell.l2 { background: var(--heatmap-2); }
