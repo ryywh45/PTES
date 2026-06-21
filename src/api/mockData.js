@@ -28,7 +28,7 @@ function lcg(seed) {
   }
 }
 
-function synthActivity(seed, start, end, weight) {
+export function synthActivity(seed, start, end, weight) {
   const startD = new Date(start)
   const endD = end ? new Date(end) : new Date('2026-05-03')
   const totalDays = Math.max(7, Math.round((endD - startD) / 86400000))
@@ -224,6 +224,14 @@ export function startOfWeek(d) {
   const diff = day === 0 ? -6 : 1 - day
   date.setDate(date.getDate() + diff)
   return date
+}
+
+/** YYYY-MM-DD in local timezone (avoids UTC shift from toISOString). */
+export function formatLocalDate(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 // Build heatmap cells for a [from, to] window. Each cell aggregates one ISO week

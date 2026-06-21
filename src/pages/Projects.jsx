@@ -1,12 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import * as api from '../api/client'
+import { useProfileScope } from '../hooks/useProfileScope'
+import ProfilePageHeader from '../components/ProfilePageHeader'
 import ProjectForm from '../components/ProjectForm'
 import TagPicker from '../components/TagPicker'
 import Modal from '../components/Modal'
+import GitHubImportModal from '../components/GitHubImportModal'
 
 // US-01 / US-05 / US-06: project list with search, tag + date filters,
 // inline edit & delete-with-confirmation.
 export default function Projects() {
+  const {
+    ready,
+    activeProfileId,
+    activeProfile,
+    switchProfile,
+    refreshProfiles,
+  } = useProfileScope()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [tags, setTags] = useState([])
   const [projects, setProjects] = useState([])
   const [q, setQ] = useState('')
@@ -16,6 +28,7 @@ export default function Projects() {
   const [loading, setLoading] = useState(true)
 
   const [showForm, setShowForm] = useState(false)
+  const [showGitHub, setShowGitHub] = useState(false)
   const [editing, setEditing] = useState(null)
   const [confirmDel, setConfirmDel] = useState(null)
 
@@ -32,13 +45,29 @@ export default function Projects() {
   }
 
   useEffect(() => {
+    if (!ready) return
     api.listTags().then(setTags)
-  }, [])
+  }, [ready, activeProfileId])
 
   useEffect(() => {
+    if (searchParams.get('github') === 'connected') {
+      const profileParam = searchParams.get('profile')
+      if (profileParam) {
+        switchProfile(Number(profileParam))
+        refreshProfiles()
+      }
+      setShowGitHub(true)
+      searchParams.delete('github')
+      searchParams.delete('profile')
+      setSearchParams(searchParams, { replace: true })
+    }
+  }, [searchParams, setSearchParams, switchProfile, refreshProfiles])
+
+  useEffect(() => {
+    if (!ready) return
     reload()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, tagFilter, from, to])
+  }, [q, tagFilter, from, to, ready, activeProfileId])
 
   const tagMap = useMemo(() => {
     const m = new Map()
@@ -72,9 +101,13 @@ export default function Projects() {
           <div className="desc">
             新增、編輯、刪除專案，並以名稱、標籤與日期範圍快速篩選
           </div>
+          <ProfilePageHeader profile={activeProfile} />
         </div>
         <div className="row">
           <span className="badge">US-01 · US-05 · US-06</span>
+          <button className="ghost" onClick={() => setShowGitHub(true)}>
+            從 GitHub 匯入
+          </button>
           <button className="primary" onClick={() => setShowForm(true)}>
             + 新增專案
           </button>
@@ -178,6 +211,16 @@ export default function Projects() {
           </table>
         )}
       </div>
+
+      {showGitHub && (
+        <Modal title="從 GitHub 匯入" onClose={() => setShowGitHub(false)} width={640}>
+          <GitHubImportModal
+            profileName={activeProfile?.display_name}
+            onClose={() => setShowGitHub(false)}
+            onImported={() => reload()}
+          />
+        </Modal>
+      )}
 
       {showForm && (
         <Modal title="新增專案" onClose={() => setShowForm(false)}>

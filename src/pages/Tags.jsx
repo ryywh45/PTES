@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import * as api from '../api/client'
+import { useProfileScope } from '../hooks/useProfileScope'
+import ProfilePageHeader from '../components/ProfilePageHeader'
 import Modal from '../components/Modal'
 
 // US-02: hierarchical tag manager. Supports add, rename, reparent (via dropdown
 // in edit dialog), and delete-with-reassign-or-cascade prompt.
 export default function Tags() {
+  const { ready, activeProfileId, activeProfile } = useProfileScope()
   const [tags, setTags] = useState([])
   const [projects, setProjects] = useState([])
   const [collapsed, setCollapsed] = useState(new Set())
@@ -18,8 +21,9 @@ export default function Tags() {
   }
 
   useEffect(() => {
+    if (!ready) return
     reload()
-  }, [])
+  }, [ready, activeProfileId])
 
   const tree = useMemo(() => buildTree(tags), [tags])
   const linkedProjectCount = useMemo(() => {
@@ -60,6 +64,7 @@ export default function Tags() {
           <div className="desc">
             以樹狀結構組織技術標籤；支援新增、重新命名、變更父節點與刪除
           </div>
+          <ProfilePageHeader profile={activeProfile} />
         </div>
         <div className="row">
           <span className="badge">US-02</span>

@@ -2,3 +2,11 @@ node_modules
 dist
 .vite
 *.log
+backend/.env
+backend/ptes.db
+backend/e2e.db
+backend/e2e.db-*
+playwright-report/
+test-results/
+backend/**/__pycache__
+backend/**/*.pyc

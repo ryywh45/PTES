@@ -3,6 +3,9 @@ import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Tags from './pages/Tags'
 import Reports from './pages/Reports'
+import ProfileSwitcher from './components/ProfileSwitcher'
+import ProfileGate from './components/ProfileGate'
+import { useProfileScope } from './hooks/useProfileScope'
 
 export default function App() {
   return (
@@ -18,17 +21,31 @@ export default function App() {
           <NavItem to="/tags" icon="❖" label="標籤管理" />
           <NavItem to="/reports" icon="✎" label="技術總結" />
         </nav>
+        <ProfileSwitcher />
       </aside>
       <main className="main">
-        <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/tags" element={<Tags />} />
-          <Route path="/reports" element={<Reports />} />
-        </Routes>
+        <ProfileGate>
+          <ProfileRoutes />
+        </ProfileGate>
       </main>
     </div>
+  )
+}
+
+function ProfileRoutes() {
+  const { activeProfileId } = useProfileScope()
+
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route
+        path="/dashboard"
+        element={<Dashboard key={activeProfileId} />}
+      />
+      <Route path="/projects" element={<Projects key={activeProfileId} />} />
+      <Route path="/tags" element={<Tags key={activeProfileId} />} />
+      <Route path="/reports" element={<Reports key={activeProfileId} />} />
+    </Routes>
   )
 }
 

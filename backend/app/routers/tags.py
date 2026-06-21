@@ -80,6 +80,24 @@ def delete_tag(
         for child in children:
             child.parent_id = tag.parent_id
             session.add(child)
+
+        parent_id = tag.parent_id
+        if parent_id is not None:
+            links = session.exec(
+                select(ProjectTag).where(ProjectTag.tag_id == tag_id)
+            ).all()
+            for link in links:
+                existing = session.exec(
+                    select(ProjectTag).where(
+                        ProjectTag.project_id == link.project_id,
+                        ProjectTag.tag_id == parent_id,
+                    )
+                ).first()
+                session.delete(link)
+                if not existing:
+                    session.add(
+                        ProjectTag(project_id=link.project_id, tag_id=parent_id)
+                    )
     else:
         subtree = collect_subtree(session, tag_id, profile.id)
         for tid in subtree:
@@ -93,9 +111,10 @@ def delete_tag(
             for link in links:
                 session.delete(link)
 
-    links = session.exec(select(ProjectTag).where(ProjectTag.tag_id == tag_id)).all()
-    for link in links:
-        session.delete(link)
+    if not opts.reassignToParent or tag.parent_id is None:
+        links = session.exec(select(ProjectTag).where(ProjectTag.tag_id == tag_id)).all()
+        for link in links:
+            session.delete(link)
     session.delete(tag)
     session.commit()
     return {"ok": True}

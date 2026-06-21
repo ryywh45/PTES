@@ -1,22 +1,28 @@
 import { useEffect, useState } from 'react'
 import * as api from '../api/client'
+import { useProfileScope } from '../hooks/useProfileScope'
+import ProfilePageHeader from '../components/ProfilePageHeader'
 
 // US-04: pick a career direction → preview filtered projects → generate
-// Markdown summary. Generation is delegated to POST /api/reports/generate.
+// Markdown summary via Gemini AI (POST /api/reports/generate).
 export default function Reports() {
+  const { ready, activeProfile } = useProfileScope()
   const [directions, setDirections] = useState([])
   const [selected, setSelected] = useState('')
   const [report, setReport] = useState(null)
   const [generating, setGenerating] = useState(false)
+  const [aiStatus, setAiStatus] = useState(null)
 
   useEffect(() => {
     api.getCareerDirections().then((d) => {
       setDirections(d)
       if (d[0]) setSelected(d[0].id)
     })
+    api.getReportStatus().then(setAiStatus).catch(() => setAiStatus(null))
   }, [])
 
   async function generate() {
+    if (!ready) return
     setGenerating(true)
     setReport(null)
     try {
@@ -43,6 +49,7 @@ export default function Reports() {
   }
 
   const dir = directions.find((d) => d.id === selected)
+  const generatingLabel = aiStatus?.ai_available ? 'AI 產生中…' : '產生中…'
 
   return (
     <>
@@ -50,8 +57,12 @@ export default function Reports() {
         <div>
           <h2>技術總結</h2>
           <div className="desc">
-            選擇職涯方向，系統自動篩選相關專案並產生 Markdown 結構化報告
+            選擇職涯方向，由 Gemini AI 依專案資料產生 Markdown 結構化報告
           </div>
+          <ProfilePageHeader
+            profile={activeProfile}
+            hint="報告將依目前使用者專案產生"
+          />
         </div>
         <div className="row">
           <span className="badge">US-04</span>
@@ -88,11 +99,22 @@ export default function Reports() {
           <button
             className="primary"
             onClick={generate}
-            disabled={!selected || generating}
+            disabled={!selected || generating || !ready}
           >
-            {generating ? '產生中…' : '產生技術總結'}
+            {generating ? generatingLabel : '產生技術總結'}
           </button>
         </div>
+
+        {aiStatus && (
+          <div
+            className={`banner ${aiStatus.ai_available ? 'info' : ''}`}
+            style={{ marginTop: 14 }}
+          >
+            {aiStatus.ai_available
+              ? `✓ Gemini AI 已就緒（${aiStatus.model}）`
+              : '未設定 GEMINI_API_KEY，將使用模板產生報告'}
+          </div>
+        )}
 
         {!report && !generating && (
           <div className="empty">尚未產生報告</div>
@@ -100,9 +122,19 @@ export default function Reports() {
 
         {report && (
           <>
+            {report.warning && (
+              <div className="banner" style={{ marginTop: 14 }}>
+                {report.warning}
+              </div>
+            )}
             <div className="banner info" style={{ marginTop: 14 }}>
               ✓ 已納入 {report.project_count} 個專案 · 耗時 {Math.round(report.elapsed)} ms
-              （效能需求：100 筆內 3 秒，NFR-03）
+              · {report.source === 'ai'
+                ? `Gemini AI 產生${report.model ? `（${report.model}）` : ''}`
+                : '模板產生（未設定 API Key 或 AI 失敗）'}
+              {report.source === 'ai'
+                ? ' · AI 產生可能超過 3 秒'
+                : ' · 效能需求：100 筆內 3 秒（NFR-03）'}
             </div>
             <div className="row" style={{ marginBottom: 8 }}>
               <span style={{ color: 'var(--text-dim)', fontSize: 12 }}>
