@@ -1,7 +1,10 @@
 node_modules
 dist
 .vite
+.idea/
 *.log
+*.pdf
+backend/.venv
 backend/.env
 backend/ptes.db
 backend/e2e.db
