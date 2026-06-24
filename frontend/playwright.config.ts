@@ -17,7 +17,7 @@ export default defineConfig({
     {
       command:
         'python -c "import os; [os.remove(f) for f in (\'e2e.db\',\'e2e.db-journal\',\'e2e.db-wal\',\'e2e.db-shm\') if os.path.exists(f)]" && python -m uvicorn app.main:app --port 8001',
-      cwd: './backend',
+      cwd: '../backend',
       url: 'http://localhost:8001/health',
       reuseExistingServer: false,
       timeout: 120_000,

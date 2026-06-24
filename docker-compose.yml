@@ -1,0 +1,27 @@
+# PTES local dev stack — one command: `docker compose up`
+# Browser only ever talks to the frontend (:5173); Vite proxies /api to the
+# backend service over the compose network, so only 5173 needs forwarding.
+
+services:
+  backend:
+    build: ./backend
+    container_name: ptes-backend
+    # Source bind-mount enables uvicorn --reload; ptes.db persists back to host.
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: ptes-frontend
+    environment:
+      # Inside the network the backend is reachable by service name, NOT localhost.
+      VITE_API_PROXY: http://backend:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # keep the in-image install, don't shadow with host's
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
